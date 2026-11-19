@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cierre de año Cañada Seca</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 55%, #60a5fa 100%);
+            color: #1f2937;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 480px;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+            padding: 32px;
+        }
+
+        .card h1 {
+            margin: 0 0 6px;
+            font-size: 1.6rem;
+            color: #1e3a8a;
+        }
+
+        .card p.subtitle {
+            margin: 0 0 24px;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .evento {
+            margin-bottom: 24px;
+            padding: 16px;
+            border-radius: 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+
+        .evento p {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+            color: #1e3a8a;
+        }
+
+        .evento p:last-child {
+            margin-bottom: 0;
+        }
+
+        .evento strong {
+            color: #1e40af;
+        }
+
+        .mapa {
+            margin-bottom: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            line-height: 0;
+        }
+
+        .mapa iframe {
+            width: 100%;
+            height: 240px;
+            border: 0;
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .field input[type="text"],
+        .field select,
+        .field input[type="number"],
+        .field textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: #f8fafc;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+
+        .field textarea {
+            resize: vertical;
+            min-height: 96px;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #2563eb;
+            cursor: pointer;
+        }
+
+        .checkbox-row label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .field-personas {
+            padding: 14px;
+            border-radius: 12px;
+            background: #eff6ff;
+            border: 1px dashed #93c5fd;
+        }
+
+        .errors {
+            margin: 6px 0 0;
+            padding-left: 18px;
+            color: #dc2626;
+            font-size: 0.85rem;
+        }
+
+        .alert {
+            margin-bottom: 20px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .btn-submit {
+            width: 100%;
+            margin-top: 8px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.99);
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <h1>Cierre de año Cañada Seca</h1>
+        <p class="subtitle">Completá tus datos para confirmar tu asistencia.</p>
+
+        <div class="evento">
+            <p><strong>Fecha:</strong> viernes 11 de diciembre a las 20:00</p>
+            <p><strong>Ubicación:</strong> Salto de las Rosas, club San Martín</p>
+        </div>
+
+        <div class="mapa">
+            <iframe
+                title="Ubicación del evento"
+                src="https://maps.google.com/maps?q=-34.722754,-68.231092&z=15&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen>
+            </iframe>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="field">
+                <label for="{{ form.nombre.id_for_label }}">{{ form.nombre.label }}</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <ul class="errors">
+                        {% for error in form.nombre.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <label for="{{ form.telefono.id_for_label }}">{{ form.telefono.label }}</label>
+                {{ form.telefono }}
+                {% if form.telefono.errors %}
+                    <ul class="errors">
+                        {% for error in form.telefono.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <label for="{{ form.vive_en.id_for_label }}">{{ form.vive_en.label }}</label>
+                {{ form.vive_en }}
+                {% if form.vive_en.errors %}
+                    <ul class="errors">
+                        {% for error in form.vive_en.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <div class="checkbox-row">
+                    {{ form.necesita_movilidad }}
+                    <label for="{{ form.necesita_movilidad.id_for_label }}">{{ form.necesita_movilidad.label }}</label>
+                </div>
+                {% if form.necesita_movilidad.errors %}
+                    <ul class="errors">
+                        {% for error in form.necesita_movilidad.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <div class="checkbox-row">
+                    {{ form.puede_acercar }}
+                    <label for="{{ form.puede_acercar.id_for_label }}">{{ form.puede_acercar.label }}</label>
+                </div>
+                {% if form.puede_acercar.errors %}
+                    <ul class="errors">
+                        {% for error in form.puede_acercar.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field field-personas" id="campo-personas" hidden>
+                <label for="{{ form.lleva_personas.id_for_label }}">{{ form.lleva_personas.label }}</label>
+                {{ form.lleva_personas }}
+                {% if form.lleva_personas.errors %}
+                    <ul class="errors">
+                        {% for error in form.lleva_personas.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="field">
+                <label for="{{ form.pregunta.id_for_label }}">{{ form.pregunta.label }}</label>
+                {{ form.pregunta }}
+                {% if form.pregunta.errors %}
+                    <ul class="errors">
+                        {% for error in form.pregunta.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-submit">Enviar confirmación</button>
+        </form>
+    </main>
+
+    <script>
+        (function () {
+            const checkboxAcercar = document.getElementById("id_puede_acercar");
+            const campoPersonas = document.getElementById("campo-personas");
+            const inputPersonas = document.getElementById("id_lleva_personas");
+
+            function togglePersonas() {
+                const activo = checkboxAcercar.checked;
+                campoPersonas.hidden = !activo;
+                inputPersonas.disabled = !activo;
+            }
+
+            checkboxAcercar.addEventListener("change", togglePersonas);
+            togglePersonas();
+
+            const telefono = document.getElementById("id_telefono");
+            const PREFIJO = "+549";
+
+            function normalizarTelefono() {
+                let digitos = telefono.value.replace(/\D/g, "");
+                if (digitos.startsWith("549")) {
+                    digitos = digitos.slice(3);
+                }
+                telefono.value = PREFIJO + digitos;
+            }
+
+            telefono.addEventListener("focus", function () {
+                if (!telefono.value.startsWith(PREFIJO)) {
+                    normalizarTelefono();
+                }
+            });
+
+            telefono.addEventListener("blur", normalizarTelefono);
+
+            telefono.form.addEventListener("submit", normalizarTelefono);
+        })();
+    </script>
+</body>
+</html>
