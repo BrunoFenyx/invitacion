@@ -26,7 +26,7 @@ class InvitadoForm(forms.ModelForm):
             "lleva_personas": "¿Cuántas personas podrías llevar?",
             "pregunta": (
                 "¿Tenés alguna pregunta que te gustaría que la política responda? "
-                "Tené por seguro que se responderá, Antes o después del evento."
+                "Tené por seguro que se responderá, durante o después del evento."
             ),
         }
         widgets = {
