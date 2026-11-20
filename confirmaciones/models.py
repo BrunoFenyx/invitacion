@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Localidad(models.Model):
@@ -38,6 +39,11 @@ class Invitado(models.Model):
         default="",
     )
     vive_en = models.ForeignKey(Localidad, on_delete=models.CASCADE)
+    confirmado_en = models.DateTimeField(
+        "Fecha de confirmación",
+        default=timezone.now,
+        editable=False,
+    )
 
     class Meta:
         verbose_name = "Invitado"
