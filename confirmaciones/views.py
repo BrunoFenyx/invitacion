@@ -9,34 +9,23 @@ from django.utils import timezone
 from .forms import InvitadoForm
 from .models import Invitado, Localidad
 
-SESSION_KEY = "invitado_id"
 DIAS_GRAFICO = 20
 
 
-def _invitado_registrado(request):
-    invitado_id = request.session.get(SESSION_KEY)
-    if not invitado_id:
-        return None
-    return Invitado.objects.filter(pk=invitado_id).first()
-
-
-def _puede_ver_dashboard(request):
-    return bool(_invitado_registrado(request)) or (
-        request.user.is_authenticated and request.user.is_staff
-    )
+def _es_staff(request):
+    return request.user.is_authenticated and request.user.is_staff
 
 
 def confirmacion(request):
-    if _puede_ver_dashboard(request):
+    if _es_staff(request):
         return redirect("confirmaciones:dashboard")
 
     if request.method == "POST":
         form = InvitadoForm(request.POST)
         if form.is_valid():
-            invitado = form.save()
-            request.session[SESSION_KEY] = invitado.pk
+            form.save()
             messages.success(request, "¡Gracias! Tu confirmación fue registrada.")
-            return redirect("confirmaciones:dashboard")
+            return redirect("confirmaciones:confirmacion")
     else:
         form = InvitadoForm()
 
@@ -44,7 +33,7 @@ def confirmacion(request):
 
 
 def dashboard(request):
-    if not _puede_ver_dashboard(request):
+    if not _es_staff(request):
         return redirect("confirmaciones:confirmacion")
 
     localidades = Localidad.objects.annotate(
