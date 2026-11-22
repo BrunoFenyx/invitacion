@@ -3,8 +3,11 @@ from datetime import timedelta
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from openpyxl import Workbook
+from openpyxl.styles import Font
 
 from .forms import InvitadoForm
 from .models import Invitado, Localidad
@@ -67,3 +70,54 @@ def dashboard(request):
         "localidades_datos": [localidad.confirmados for localidad in localidades],
     }
     return render(request, "confirmaciones/dashboard.html", contexto)
+
+
+def exportar_invitados(request):
+    if not _es_staff(request):
+        return redirect("confirmaciones:confirmacion")
+
+    workbook = Workbook()
+    hoja = workbook.active
+    hoja.title = "Invitados"
+
+    encabezados = [
+        "Nombre y apellido",
+        "Teléfono",
+        "Localidad",
+        "¿Necesita movilidad?",
+        "¿Puede acercar a alguien?",
+        "Personas que puede llevar",
+        "Pregunta",
+        "Fecha de confirmación",
+    ]
+    hoja.append(encabezados)
+    for celda in hoja[1]:
+        celda.font = Font(bold=True)
+
+    for invitado in Invitado.objects.select_related("vive_en").order_by("nombre"):
+        hoja.append(
+            [
+                invitado.nombre,
+                invitado.telefono or "",
+                invitado.vive_en.nombre,
+                "Sí" if invitado.necesita_movilidad else "No",
+                "Sí" if invitado.puede_acercar else "No",
+                invitado.lleva_personas,
+                invitado.pregunta,
+                timezone.localtime(invitado.confirmado_en).strftime("%d/%m/%Y %H:%M"),
+            ]
+        )
+
+    anchos = [28, 18, 20, 20, 26, 24, 50, 20]
+    for indice, ancho in enumerate(anchos, start=1):
+        hoja.column_dimensions[chr(64 + indice)].width = ancho
+
+    respuesta = HttpResponse(
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    )
+    nombre = f"invitados_{timezone.localdate():%Y%m%d}.xlsx"
+    respuesta["Content-Disposition"] = f'attachment; filename="{nombre}"'
+    workbook.save(respuesta)
+    return respuesta

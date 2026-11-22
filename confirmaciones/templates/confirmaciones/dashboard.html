@@ -30,6 +30,35 @@
             color: #ffffff;
         }
 
+        header .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-export {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-export:hover {
+            background: #eff6ff;
+        }
+
+        .btn-export:active {
+            transform: scale(0.99);
+        }
+
         header h1 {
             margin: 0 0 6px;
             font-size: 1.8rem;
@@ -141,8 +170,15 @@
 <body>
     <div class="layout">
         <header>
-            <h1>Dashboard del evento</h1>
-            <p>Volver a encontrarnos y escucharnos</p>
+            <div class="top">
+                <div>
+                    <h1>Dashboard del evento</h1>
+                    <p>Volver a encontrarnos y escucharnos</p>
+                </div>
+                <a class="btn-export" href="{% url 'confirmaciones:exportar_invitados' %}">
+                    Descargar Excel de invitados
+                </a>
+            </div>
         </header>
 
         {% if messages %}
