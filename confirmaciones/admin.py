@@ -18,6 +18,9 @@ class InvitadoAdmin(admin.ModelAdmin):
         "necesita_movilidad",
         "puede_acercar",
         "lleva_personas",
+        "viaja_con",
     )
     list_filter = ("necesita_movilidad", "puede_acercar", "vive_en")
+    list_select_related = ("vive_en", "viaja_con")
     search_fields = ("nombre", "telefono")
+    autocomplete_fields = ("viaja_con",)

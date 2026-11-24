@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Cierre de año Cañada Seca</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leader-line@1.0.8/leader-line.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -117,6 +118,13 @@
             border-radius: 14px;
             border: 1px solid #bfdbfe;
             background: #eff6ff;
+            cursor: pointer;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .localidad:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 10px 24px rgba(30, 58, 138, 0.15);
         }
 
         .localidad h3 {
@@ -160,14 +168,409 @@
             font-size: 0.95rem;
         }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 50;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 460px;
+            max-height: 80vh;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 30px 70px rgba(15, 23, 42, 0.4);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 20px 22px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #1e3a8a;
+        }
+
+        .modal-close {
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .modal-close:hover {
+            background: #dbeafe;
+        }
+
+        .modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 0;
+            padding: 16px 18px;
+            list-style: none;
+            overflow-y: auto;
+        }
+
+        .persona {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            font-size: 0.92rem;
+        }
+
+        .persona .dot {
+            flex: 0 0 auto;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .persona .nombre {
+            flex: 1;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .persona .estado {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .persona.verde {
+            background: #dcfce7;
+            border-color: #86efac;
+        }
+
+        .persona.verde .dot {
+            background: #16a34a;
+        }
+
+        .persona.verde .estado {
+            color: #166534;
+        }
+
+        .persona.amarillo {
+            background: #fef9c3;
+            border-color: #fde047;
+        }
+
+        .persona.amarillo .dot {
+            background: #eab308;
+        }
+
+        .persona.amarillo .estado {
+            color: #854d0e;
+        }
+
+        .persona.rojo {
+            background: #fee2e2;
+            border-color: #fca5a5;
+        }
+
+        .persona.rojo .dot {
+            background: #dc2626;
+        }
+
+        .persona.rojo .estado {
+            color: #991b1b;
+        }
+
+        .modal-empty {
+            margin: 0;
+            padding: 24px 22px;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        .modal-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding: 0 18px 18px;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .modal-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-legend i {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .modal.ancho {
+            max-width: 880px;
+        }
+
+        .modal-acciones {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-logistica {
+            padding: 8px 16px;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-logistica:hover {
+            background: #dbeafe;
+        }
+
+        .logistica {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            align-items: start;
+            gap: 18px;
+            padding: 18px;
+        }
+
+        .logistica-columna {
+            min-width: 0;
+        }
+
+        .logistica-columna h4 {
+            margin: 0 0 10px;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+
+        .logistica-lista {
+            display: flex;
+            flex-direction: column;
+            min-height: 90px;
+            margin: 0;
+            padding: 6px;
+            list-style: none;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+        }
+
+        .logistica-carta {
+        position: relative;
+        max-width: 220px;          
+        padding: 6px 8px;          
+        font-size: 0.85rem;        
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+        cursor: grab;
+        transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+        .conectar-btn {
+            position: absolute;
+            top: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 0.8rem;
+            line-height: 1;
+            cursor: pointer;
+            transform: translateY(-50%);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+            transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+            z-index: 2;
+        }
+
+        .logistica-columna.necesitan .conectar-btn {
+            right: -12px;
+        }
+
+        .logistica-columna.pueden .conectar-btn {
+            left: -12px;
+        }
+
+        .conectar-btn:hover:not(:disabled) {
+            background: #1d4ed8;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .conectar-btn.seleccionada {
+            background: #16a34a;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.25);
+        }
+
+        .conectar-btn:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .conectar-btn.conectada {
+            background: #16a34a;
+        }
+
+        .logistica-columna.necesitan .logistica-carta {
+            margin: 5px 0;
+        }
+
+        .logistica-columna.pueden .logistica-carta {
+            margin: 14px 0;
+            border-left: 4px solid #22c55e;
+        }
+
+        .logistica-carta:hover {
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+            border-color: #93c5fd;
+        }
+
+        .logistica-carta.arrastrando {
+            opacity: 0.45;
+            cursor: grabbing;
+        }
+
+        .logistica-carta:active {
+            cursor: grabbing;
+        }
+
+        .carta-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .nombre-carta {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .cupo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        .telefono-carta {
+            display: inline-block;
+            padding: 3px 9px;
+            border: 1px solid #bfdbfe;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-family: inherit;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .telefono-carta:hover {
+            background: #dbeafe;
+        }
+
+        .telefono-carta.copiado {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+
+        .telefono-carta:disabled {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+            cursor: default;
+        }
+
+        .logistica-vacia {
+            padding: 14px 10px;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .leader-line {
+            z-index: 10000 !important;
+            pointer-events: none;
+        }
+
         @media (max-width: 820px) {
             .charts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .logistica {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
+    {% csrf_token %}
     <div class="layout">
         <header>
             <div class="top">
@@ -210,7 +613,7 @@
             {% if localidades %}
                 <div class="localidades">
                     {% for localidad in localidades %}
-                        <article class="localidad">
+                        <article class="localidad" data-localidad="{{ localidad.nombre }}" tabindex="0" role="button">
                             <h3>{{ localidad.nombre }}</h3>
                             <div class="metric">
                                 <span>Confirmados</span>
@@ -233,11 +636,50 @@
         </section>
     </div>
 
+    <div class="modal-overlay" id="modal-localidad" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-localidad-titulo">
+            <div class="modal-header">
+                <h3 id="modal-localidad-titulo"></h3>
+                <div class="modal-acciones">
+                    <button type="button" class="btn-logistica" id="modal-localidad-logistica-btn">Logística</button>
+                    <button type="button" class="modal-close" id="modal-localidad-cerrar" aria-label="Cerrar">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" id="modal-localidad-normal">
+                <ul class="modal-list" id="modal-localidad-lista"></ul>
+                <p class="modal-empty" id="modal-localidad-vacio" style="display: none;">
+                    No hay personas anotadas en esta localidad.
+                </p>
+                <div class="modal-legend">
+                    <span><i style="background: #16a34a;"></i>Puede ir</span>
+                    <span><i style="background: #eab308;"></i>Movilidad asignada</span>
+                    <span><i style="background: #dc2626;"></i>Sin movilidad</span>
+                </div>
+            </div>
+            <div class="modal-body logistica" id="modal-localidad-logistica" style="display: none;">
+                <div class="logistica-columna necesitan">
+                    <h4>Necesitan movilidad</h4>
+                    <ul class="logistica-lista" id="logistica-necesitan"></ul>
+                </div>
+                <div class="logistica-columna pueden">
+                    <h4>Pueden llevar personas</h4>
+                    <ul class="logistica-lista" id="logistica-pueden"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{ dias_labels|json_script:"dias-labels" }}
     {{ dias_datos|json_script:"dias-datos" }}
     {{ localidades_labels|json_script:"localidades-labels" }}
     {{ localidades_datos|json_script:"localidades-datos" }}
+    {{ invitados_por_localidad|json_script:"invitados-localidad" }}
 
+    <script>
+        const URL_CONECTAR = "{% url 'confirmaciones:conectar_movilidad' %}";
+        const URL_DESCONECTAR = "{% url 'confirmaciones:desconectar_movilidad' %}";
+        const URL_REORDENAR = "{% url 'confirmaciones:reordenar_logistica' %}";
+    </script>
     <script>
         (function () {
             Chart.defaults.font.family = '"Segoe UI", system-ui, -apple-system, sans-serif';
@@ -307,6 +749,620 @@
                         },
                     },
                 },
+            });
+
+            const invitadosPorLocalidad = JSON.parse(
+                document.getElementById("invitados-localidad").textContent
+            );
+            const csrfToken = document.querySelector(
+                "[name=csrfmiddlewaretoken]"
+            ).value;
+            const overlay = document.getElementById("modal-localidad");
+            const modalCaja = overlay.querySelector(".modal");
+            const modalTitulo = document.getElementById("modal-localidad-titulo");
+            const modalLista = document.getElementById("modal-localidad-lista");
+            const modalVacio = document.getElementById("modal-localidad-vacio");
+            const botonCerrar = document.getElementById("modal-localidad-cerrar");
+            const botonLogistica = document.getElementById("modal-localidad-logistica-btn");
+            const vistaNormal = document.getElementById("modal-localidad-normal");
+            const vistaLogistica = document.getElementById("modal-localidad-logistica");
+            const listaNecesitan = document.getElementById("logistica-necesitan");
+            const listaPueden = document.getElementById("logistica-pueden");
+
+            const etiquetas = {
+                verde: "Puede ir",
+                amarillo: "Movilidad asignada",
+                rojo: "Sin movilidad",
+            };
+
+            let modoLogistica = false;
+            let cartaArrastrada = null;
+            let seleccionNecesita = null;
+            let seleccionPuede = null;
+            let conexiones = [];
+            let localidadActual = "";
+
+            async function postJSON(url, datos) {
+                const respuesta = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken,
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify(datos),
+                });
+                let cuerpo = {};
+                try {
+                    cuerpo = await respuesta.json();
+                } catch (error) {}
+                if (!respuesta.ok || cuerpo.ok === false) {
+                    throw new Error(cuerpo.error || "No se pudo guardar el cambio.");
+                }
+                return cuerpo;
+            }
+
+            function renderNormal(personas) {
+                modalLista.innerHTML = "";
+                modalVacio.style.display = personas.length ? "none" : "block";
+
+                personas.forEach(function (persona) {
+                    const fila = document.createElement("li");
+                    fila.className = "persona " + persona.estado;
+
+                    const punto = document.createElement("span");
+                    punto.className = "dot";
+
+                    const nombrePersona = document.createElement("span");
+                    nombrePersona.className = "nombre";
+                    nombrePersona.textContent = persona.nombre;
+
+                    const estado = document.createElement("span");
+                    estado.className = "estado";
+                    estado.textContent =
+                        persona.estado === "amarillo" && persona.viaja_con
+                            ? "Va con " + persona.viaja_con
+                            : etiquetas[persona.estado] || "";
+
+                    fila.append(punto, nombrePersona, estado);
+                    modalLista.appendChild(fila);
+                });
+            }
+
+            function copiarTelefono(elemento, telefono) {
+                const textoOriginal = elemento.textContent;
+                const confirmar = function () {
+                    elemento.textContent = "Copiado";
+                    elemento.classList.add("copiado");
+                    window.setTimeout(function () {
+                        elemento.textContent = textoOriginal;
+                        elemento.classList.remove("copiado");
+                    }, 1200);
+                };
+                const respaldo = function () {
+                    const auxiliar = document.createElement("textarea");
+                    auxiliar.value = telefono;
+                    auxiliar.setAttribute("readonly", "");
+                    auxiliar.style.position = "fixed";
+                    auxiliar.style.opacity = "0";
+                    document.body.appendChild(auxiliar);
+                    auxiliar.select();
+                    try {
+                        document.execCommand("copy");
+                    } catch (error) {}
+                    document.body.removeChild(auxiliar);
+                    confirmar();
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(telefono).then(confirmar).catch(respaldo);
+                } else {
+                    respaldo();
+                }
+            }
+
+            function crearCarta(persona, esConductor) {
+                const carta = document.createElement("li");
+                carta.className = "logistica-carta";
+                carta.draggable = true;
+                carta._persona = persona;
+                carta._id = persona.id;
+                carta._esConductor = esConductor;
+                carta._cupo = persona.cupo;
+                carta._conectada = false;
+
+                const superior = document.createElement("div");
+                superior.className = "carta-top";
+
+                const nombre = document.createElement("span");
+                nombre.className = "nombre-carta";
+                nombre.textContent = persona.nombre;
+                superior.appendChild(nombre);
+
+                if (esConductor) {
+                    const cupo = document.createElement("span");
+                    cupo.className = "cupo";
+                    cupo.textContent = persona.cupo;
+                    cupo.title = "Espacios disponibles para llevar personas";
+                    superior.appendChild(cupo);
+                    carta._cupoBadge = cupo;
+                }
+
+                const telefono = document.createElement("button");
+                telefono.type = "button";
+                telefono.className = "telefono-carta";
+
+                if (persona.telefono) {
+                    telefono.textContent = persona.telefono;
+                    telefono.title = "Click para copiar el número";
+                    telefono.addEventListener("click", function (evento) {
+                        evento.stopPropagation();
+                        copiarTelefono(telefono, persona.telefono);
+                    });
+                } else {
+                    telefono.textContent = "Sin teléfono";
+                    telefono.disabled = true;
+                }
+
+                const conectar = document.createElement("button");
+                conectar.type = "button";
+                conectar.className = "conectar-btn";
+                conectar.textContent = "↔";
+                conectar.title = esConductor
+                    ? "Conectar con alguien que necesita movilidad"
+                    : "Conectar con alguien que puede llevar";
+                conectar.addEventListener("click", function (evento) {
+                    evento.stopPropagation();
+                    seleccionarCarta(carta, esConductor, conectar);
+                });
+                carta._conectarBtn = conectar;
+
+                carta.append(superior, telefono, conectar);
+
+                if (esConductor) {
+                    actualizarCupo(carta);
+                }
+
+                return carta;
+            }
+
+            function conductorTieneConexiones(carta) {
+                return conexiones.some(function (conexion) {
+                    return conexion.cartaPuede === carta;
+                });
+            }
+
+            function actualizarCupo(carta) {
+                if (carta._cupoBadge) {
+                    carta._cupoBadge.textContent = carta._cupo;
+                }
+                if (carta._conectarBtn) {
+                    const tieneConexiones = conductorTieneConexiones(carta);
+                    carta._conectarBtn.disabled =
+                        carta._cupo <= 0 && !tieneConexiones;
+                    carta._conectarBtn.title = carta._cupo > 0
+                        ? "Conectar con alguien que necesita movilidad"
+                        : tieneConexiones
+                            ? "Sin espacios disponibles (gestioná las conexiones existentes)"
+                            : "Sin espacios disponibles";
+                }
+            }
+
+            function actualizarLineas() {
+                conexiones.forEach(function (conexion) {
+                    try {
+                        conexion.linea.position();
+                    } catch (error) {}
+                });
+            }
+
+            function limpiarConexiones() {
+                conexiones.forEach(function (conexion) {
+                    try {
+                        conexion.linea.remove();
+                    } catch (error) {}
+                });
+                conexiones = [];
+            }
+
+            function deseleccionar(tipo) {
+                if (tipo === "necesita" && seleccionNecesita) {
+                    seleccionNecesita.boton.classList.remove("seleccionada");
+                    seleccionNecesita = null;
+                }
+                if (tipo === "puede" && seleccionPuede) {
+                    seleccionPuede.boton.classList.remove("seleccionada");
+                    seleccionPuede = null;
+                }
+            }
+
+            function limpiarSeleccion() {
+                deseleccionar("necesita");
+                deseleccionar("puede");
+            }
+
+            function seleccionarCarta(carta, esConductor, boton) {
+                if (esConductor) {
+                    if (carta._cupo <= 0 && !conductorTieneConexiones(carta)) {
+                        return;
+                    }
+                    if (seleccionPuede && seleccionPuede.carta === carta) {
+                        deseleccionar("puede");
+                        return;
+                    }
+                    deseleccionar("puede");
+                    seleccionPuede = { carta: carta, boton: boton };
+                } else {
+                    if (seleccionNecesita && seleccionNecesita.carta === carta) {
+                        deseleccionar("necesita");
+                        return;
+                    }
+                    deseleccionar("necesita");
+                    seleccionNecesita = { carta: carta, boton: boton };
+                }
+
+                boton.classList.add("seleccionada");
+                intentarConectar();
+            }
+
+            function registrarConexion(cartaNecesita, cartaPuede) {
+                const linea = new LeaderLine(
+                    cartaNecesita._conectarBtn,
+                    cartaPuede._conectarBtn,
+                    {
+                        color: "#2563eb",
+                        size: 3,
+                        path: "fluid",
+                        startPlug: "disc",
+                        endPlug: "arrow3",
+                        startPlugSize: 1.2,
+                        endPlugSize: 1.2,
+                    }
+                );
+
+                conexiones.push({
+                    linea: linea,
+                    cartaNecesita: cartaNecesita,
+                    cartaPuede: cartaPuede,
+                });
+
+                cartaNecesita._conectada = true;
+                cartaNecesita._conectarBtn.classList.add("conectada");
+                cartaNecesita._conectarBtn.title =
+                    "Clic junto con su vínculo para deshacer la conexión";
+
+                if (modoLogistica) {
+                    linea.show();
+                } else {
+                    linea.hide();
+                }
+            }
+
+            function quitarConexion(conexion) {
+                try {
+                    conexion.linea.remove();
+                } catch (error) {}
+
+                conexiones = conexiones.filter(function (item) {
+                    return item !== conexion;
+                });
+
+                conexion.cartaNecesita._conectada = false;
+                if (conexion.cartaNecesita._conectarBtn) {
+                    conexion.cartaNecesita._conectarBtn.classList.remove("conectada");
+                    conexion.cartaNecesita._conectarBtn.title =
+                        "Conectar con alguien que puede llevar";
+                }
+            }
+
+            function actualizarEstadoPersona(persona, conductor) {
+                if (conductor) {
+                    persona.estado = "amarillo";
+                    persona.viaja_con = conductor.nombre;
+                    persona.viaja_con_id = conductor.id;
+                } else {
+                    persona.estado = "rojo";
+                    persona.viaja_con = "";
+                    persona.viaja_con_id = null;
+                }
+            }
+
+            async function intentarConectar() {
+                if (!seleccionNecesita || !seleccionPuede) {
+                    return;
+                }
+                if (typeof LeaderLine === "undefined") {
+                    limpiarSeleccion();
+                    return;
+                }
+
+                const origen = seleccionNecesita;
+                const destino = seleccionPuede;
+
+                const existente = conexiones.find(function (conexion) {
+                    return (
+                        conexion.cartaNecesita === origen.carta &&
+                        conexion.cartaPuede === destino.carta
+                    );
+                });
+
+                limpiarSeleccion();
+
+                try {
+                    if (existente) {
+                        const respuesta = await postJSON(URL_DESCONECTAR, {
+                            necesita_id: origen.carta._id,
+                        });
+                        quitarConexion(existente);
+                        if (typeof respuesta.cupo === "number") {
+                            destino.carta._cupo = respuesta.cupo;
+                            destino.carta._persona.cupo = respuesta.cupo;
+                        }
+                        actualizarCupo(destino.carta);
+                        actualizarEstadoPersona(origen.carta._persona, null);
+                    } else {
+                        if (destino.carta._cupo <= 0 || origen.carta._conectada) {
+                            return;
+                        }
+                        const respuesta = await postJSON(URL_CONECTAR, {
+                            necesita_id: origen.carta._id,
+                            puede_id: destino.carta._id,
+                        });
+                        registrarConexion(origen.carta, destino.carta);
+                        if (typeof respuesta.cupo === "number") {
+                            destino.carta._cupo = respuesta.cupo;
+                            destino.carta._persona.cupo = respuesta.cupo;
+                        }
+                        actualizarCupo(destino.carta);
+                        actualizarEstadoPersona(
+                            origen.carta._persona,
+                            destino.carta._persona
+                        );
+                    }
+
+                    if (!modoLogistica) {
+                        renderNormal(
+                            invitadosPorLocalidad[localidadActual] || []
+                        );
+                    }
+                } catch (error) {
+                    window.alert(error.message);
+                    window.location.reload();
+                }
+            }
+
+            function obtenerElementoDespues(contenedor, y) {
+                const cartas = Array.prototype.slice.call(
+                    contenedor.querySelectorAll(".logistica-carta:not(.arrastrando)")
+                );
+                let masCerca = { desplazamiento: Number.NEGATIVE_INFINITY, elemento: null };
+
+                cartas.forEach(function (carta) {
+                    const caja = carta.getBoundingClientRect();
+                    const desplazamiento = y - caja.top - caja.height / 2;
+                    if (desplazamiento < 0 && desplazamiento > masCerca.desplazamiento) {
+                        masCerca = { desplazamiento: desplazamiento, elemento: carta };
+                    }
+                });
+
+                return masCerca.elemento;
+            }
+
+            function persistirOrden(lista) {
+                const tipo = lista === listaNecesitan ? "necesitan" : "pueden";
+                const campo = tipo === "necesitan"
+                    ? "orden_necesitan"
+                    : "orden_pueden";
+                const cartas = Array.prototype.slice.call(
+                    lista.querySelectorAll(".logistica-carta")
+                );
+                const ids = cartas.map(function (carta) {
+                    return carta._id;
+                });
+
+                cartas.forEach(function (carta, indice) {
+                    carta._persona[campo] = indice;
+                });
+
+                postJSON(URL_REORDENAR, { lista: tipo, ids: ids }).catch(
+                    function (error) {
+                        window.alert(error.message);
+                        window.location.reload();
+                    }
+                );
+            }
+
+            function activarArrastre(lista) {
+                Array.prototype.forEach.call(
+                    lista.querySelectorAll(".logistica-carta"),
+                    function (carta) {
+                        carta.addEventListener("dragstart", function (evento) {
+                            cartaArrastrada = carta;
+                            carta.classList.add("arrastrando");
+                            evento.dataTransfer.effectAllowed = "move";
+                            try {
+                                evento.dataTransfer.setData("text/plain", "carta");
+                            } catch (error) {}
+                        });
+                        carta.addEventListener("dragend", function () {
+                            carta.classList.remove("arrastrando");
+                            cartaArrastrada = null;
+                            actualizarLineas();
+                            persistirOrden(carta.parentElement);
+                        });
+                    }
+                );
+
+                if (lista.dataset.arrastreListo === "1") {
+                    return;
+                }
+                lista.dataset.arrastreListo = "1";
+
+                lista.addEventListener("dragover", function (evento) {
+                    evento.preventDefault();
+                    if (!cartaArrastrada || cartaArrastrada.parentElement !== lista) {
+                        return;
+                    }
+                    const despues = obtenerElementoDespues(lista, evento.clientY);
+                    if (despues == null) {
+                        lista.appendChild(cartaArrastrada);
+                    } else {
+                        lista.insertBefore(cartaArrastrada, despues);
+                    }
+                });
+                lista.addEventListener("drop", function (evento) {
+                    evento.preventDefault();
+                });
+            }
+
+            function restaurarConexiones() {
+                if (typeof LeaderLine === "undefined") {
+                    return;
+                }
+
+                const cartasNecesitan = Array.prototype.slice.call(
+                    listaNecesitan.querySelectorAll(".logistica-carta")
+                );
+                const cartasPueden = Array.prototype.slice.call(
+                    listaPueden.querySelectorAll(".logistica-carta")
+                );
+
+                cartasNecesitan.forEach(function (cartaNecesita) {
+                    const conductorId = cartaNecesita._persona.viaja_con_id;
+                    if (!conductorId) {
+                        return;
+                    }
+                    const cartaPuede = cartasPueden.find(function (carta) {
+                        return carta._id === conductorId;
+                    });
+                    if (!cartaPuede) {
+                        return;
+                    }
+                    registrarConexion(cartaNecesita, cartaPuede);
+                });
+            }
+
+            function renderLogistica(personas) {
+                listaNecesitan.innerHTML = "";
+                listaPueden.innerHTML = "";
+
+                const necesitan = personas.filter(function (persona) {
+                    return persona.necesita_movilidad;
+                });
+                const pueden = personas.filter(function (persona) {
+                    return persona.puede_acercar;
+                });
+
+                necesitan.sort(function (a, b) {
+                    return (
+                        (a.orden_necesitan || 0) - (b.orden_necesitan || 0) ||
+                        a.nombre.localeCompare(b.nombre)
+                    );
+                });
+                pueden.sort(function (a, b) {
+                    return (
+                        (a.orden_pueden || 0) - (b.orden_pueden || 0) ||
+                        a.nombre.localeCompare(b.nombre)
+                    );
+                });
+
+                if (necesitan.length) {
+                    necesitan.forEach(function (persona) {
+                        listaNecesitan.appendChild(crearCarta(persona, false));
+                    });
+                } else {
+                    const vacia = document.createElement("li");
+                    vacia.className = "logistica-vacia";
+                    vacia.textContent = "Sin personas";
+                    listaNecesitan.appendChild(vacia);
+                }
+
+                if (pueden.length) {
+                    pueden.forEach(function (persona) {
+                        listaPueden.appendChild(crearCarta(persona, true));
+                    });
+                } else {
+                    const vacia = document.createElement("li");
+                    vacia.className = "logistica-vacia";
+                    vacia.textContent = "Sin personas";
+                    listaPueden.appendChild(vacia);
+                }
+
+                activarArrastre(listaNecesitan);
+                activarArrastre(listaPueden);
+                restaurarConexiones();
+            }
+
+            function mostrarVista(logistica) {
+                modoLogistica = logistica;
+                limpiarSeleccion();
+                vistaNormal.style.display = logistica ? "none" : "";
+                vistaLogistica.style.display = logistica ? "" : "none";
+                modalCaja.classList.toggle("ancho", logistica);
+                botonLogistica.textContent = logistica ? "Personas" : "Logística";
+
+                conexiones.forEach(function (conexion) {
+                    if (logistica) {
+                        conexion.linea.show();
+                    } else {
+                        conexion.linea.hide();
+                    }
+                });
+
+                if (logistica) {
+                    window.requestAnimationFrame(actualizarLineas);
+                }
+            }
+
+            function abrirModal(nombre) {
+                limpiarConexiones();
+                limpiarSeleccion();
+                localidadActual = nombre;
+                modalTitulo.textContent = nombre;
+                const personas = invitadosPorLocalidad[nombre] || [];
+                renderNormal(personas);
+                renderLogistica(personas);
+                mostrarVista(false);
+
+                overlay.classList.add("open");
+                overlay.setAttribute("aria-hidden", "false");
+            }
+
+            function cerrarModal() {
+                limpiarConexiones();
+                limpiarSeleccion();
+                overlay.classList.remove("open");
+                overlay.setAttribute("aria-hidden", "true");
+            }
+
+            document.querySelectorAll(".localidad").forEach(function (carta) {
+                carta.addEventListener("click", function () {
+                    abrirModal(carta.dataset.localidad);
+                });
+                carta.addEventListener("keydown", function (evento) {
+                    if (evento.key === "Enter" || evento.key === " ") {
+                        evento.preventDefault();
+                        abrirModal(carta.dataset.localidad);
+                    }
+                });
+            });
+
+            botonLogistica.addEventListener("click", function () {
+                mostrarVista(!modoLogistica);
+            });
+            vistaLogistica.addEventListener("scroll", actualizarLineas);
+            window.addEventListener("resize", actualizarLineas);
+            window.addEventListener("scroll", actualizarLineas, true);
+            botonCerrar.addEventListener("click", cerrarModal);
+            overlay.addEventListener("click", function (evento) {
+                if (evento.target === overlay) {
+                    cerrarModal();
+                }
+            });
+            document.addEventListener("keydown", function (evento) {
+                if (evento.key === "Escape" && overlay.classList.contains("open")) {
+                    cerrarModal();
+                }
             });
         })();
     </script>
