@@ -60,6 +60,83 @@
             transform: scale(0.99);
         }
 
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-preguntas {
+            display: inline-block;
+            padding: 12px 18px;
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            background: transparent;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.2);
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-preguntas:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-preguntas:active {
+            transform: scale(0.99);
+        }
+
+        .preguntas-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin: 0;
+            padding: 18px;
+            list-style: none;
+        }
+
+        .pregunta-item {
+            padding: 16px 18px;
+            border-radius: 12px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+        }
+
+        .pregunta-cabecera {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pregunta-autor {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        .pregunta-localidad {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .pregunta-texto {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #1f2937;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
         header h1 {
             margin: 0 0 6px;
             font-size: 1.8rem;
@@ -578,9 +655,14 @@
                     <h1>Dashboard del evento</h1>
                     <p>Volver a encontrarnos y escucharnos</p>
                 </div>
-                <a class="btn-export" href="{% url 'confirmaciones:exportar_invitados' %}">
-                    Descargar Excel de invitados
-                </a>
+                <div class="header-actions">
+                    <button type="button" class="btn-preguntas" id="abrir-preguntas">
+                        Ver preguntas realizadas
+                    </button>
+                    <a class="btn-export" href="{% url 'confirmaciones:exportar_invitados' %}">
+                        Descargar Excel de invitados
+                    </a>
+                </div>
             </div>
         </header>
 
@@ -669,11 +751,27 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="modal-preguntas" aria-hidden="true">
+        <div class="modal ancho" role="dialog" aria-modal="true" aria-labelledby="modal-preguntas-titulo">
+            <div class="modal-header">
+                <h3 id="modal-preguntas-titulo">Preguntas realizadas</h3>
+                <button type="button" class="modal-close" id="modal-preguntas-cerrar" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul class="preguntas-lista" id="preguntas-lista"></ul>
+                <p class="modal-empty" id="preguntas-vacio" style="display: none;">
+                    Todavía no hay preguntas realizadas.
+                </p>
+            </div>
+        </div>
+    </div>
+
     {{ dias_labels|json_script:"dias-labels" }}
     {{ dias_datos|json_script:"dias-datos" }}
     {{ localidades_labels|json_script:"localidades-labels" }}
     {{ localidades_datos|json_script:"localidades-datos" }}
     {{ invitados_por_localidad|json_script:"invitados-localidad" }}
+    {{ preguntas|json_script:"preguntas-datos" }}
 
     <script>
         const URL_CONECTAR = "{% url 'confirmaciones:conectar_movilidad' %}";
@@ -1362,6 +1460,71 @@
             document.addEventListener("keydown", function (evento) {
                 if (evento.key === "Escape" && overlay.classList.contains("open")) {
                     cerrarModal();
+                }
+            });
+
+            const preguntas = JSON.parse(
+                document.getElementById("preguntas-datos").textContent
+            );
+            const overlayPreguntas = document.getElementById("modal-preguntas");
+            const listaPreguntas = document.getElementById("preguntas-lista");
+            const preguntasVacio = document.getElementById("preguntas-vacio");
+            const botonAbrirPreguntas = document.getElementById("abrir-preguntas");
+            const botonCerrarPreguntas = document.getElementById("modal-preguntas-cerrar");
+
+            function renderPreguntas() {
+                listaPreguntas.innerHTML = "";
+                preguntasVacio.style.display = preguntas.length ? "none" : "block";
+
+                preguntas.forEach(function (item) {
+                    const fila = document.createElement("li");
+                    fila.className = "pregunta-item";
+
+                    const cabecera = document.createElement("div");
+                    cabecera.className = "pregunta-cabecera";
+
+                    const autor = document.createElement("span");
+                    autor.className = "pregunta-autor";
+                    autor.textContent = item.nombre;
+
+                    const localidad = document.createElement("span");
+                    localidad.className = "pregunta-localidad";
+                    localidad.textContent = item.localidad;
+
+                    const texto = document.createElement("p");
+                    texto.className = "pregunta-texto";
+                    texto.textContent = item.pregunta;
+
+                    cabecera.append(autor, localidad);
+                    fila.append(cabecera, texto);
+                    listaPreguntas.appendChild(fila);
+                });
+            }
+
+            function abrirPreguntas() {
+                renderPreguntas();
+                overlayPreguntas.classList.add("open");
+                overlayPreguntas.setAttribute("aria-hidden", "false");
+            }
+
+            function cerrarPreguntas() {
+                overlayPreguntas.classList.remove("open");
+                overlayPreguntas.setAttribute("aria-hidden", "true");
+            }
+
+            botonAbrirPreguntas.addEventListener("click", abrirPreguntas);
+            botonCerrarPreguntas.addEventListener("click", cerrarPreguntas);
+            overlayPreguntas.addEventListener("click", function (evento) {
+                if (evento.target === overlayPreguntas) {
+                    cerrarPreguntas();
+                }
+            });
+            document.addEventListener("keydown", function (evento) {
+                if (
+                    evento.key === "Escape" &&
+                    overlayPreguntas.classList.contains("open")
+                ) {
+                    cerrarPreguntas();
                 }
             });
         })();

@@ -79,6 +79,7 @@ def dashboard(request):
     dias = [desde + timedelta(days=i) for i in range(DIAS_GRAFICO)]
 
     invitados_por_localidad = {}
+    preguntas = []
     invitados = Invitado.objects.select_related("vive_en", "viaja_con").annotate(
         asignados=Count(
             "acompanados", filter=Q(acompanados__necesita_movilidad=True)
@@ -91,6 +92,15 @@ def dashboard(request):
             estado = "amarillo"
         else:
             estado = "rojo"
+
+        if invitado.pregunta.strip():
+            preguntas.append(
+                {
+                    "nombre": invitado.nombre,
+                    "localidad": invitado.vive_en.nombre,
+                    "pregunta": invitado.pregunta,
+                }
+            )
 
         invitados_por_localidad.setdefault(invitado.vive_en.nombre, []).append(
             {
@@ -118,6 +128,7 @@ def dashboard(request):
         "localidades_labels": [localidad.nombre for localidad in localidades],
         "localidades_datos": [localidad.confirmados for localidad in localidades],
         "invitados_por_localidad": invitados_por_localidad,
+        "preguntas": preguntas,
     }
     return render(request, "confirmaciones/dashboard.html", contexto)
 
